@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MilliSec | Intranet</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e0f;
+      --bg2: #0f1518;
+      --accent: #00ff88;
+      --accent2: #ff4444;
+      --yellow: #ffd700;
+      --text: #c8d8d0;
+      --dim: rgba(200,216,208,0.4);
+      --border: rgba(0,255,136,0.15);
+      --panel: rgba(15,21,24,0.95);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'IBM Plex Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .page { position: relative; z-index: 1; }
+
+    /* ── LOGIN PAGE ── */
+    .login-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 440px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 44px 40px;
+      position: relative;
+    }
+
+    .login-box::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+
+    .intranet-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 10px;
+      color: var(--accent);
+      letter-spacing: 3px;
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .badge-dot {
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: blink 1.5s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+
+    .login-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 20px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 3px;
+      margin-bottom: 6px;
+    }
+
+    .login-title span { color: var(--accent); }
+
+    .login-sub {
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 2px;
+      margin-bottom: 32px;
+    }
+
+    .field { margin-bottom: 18px; }
+
+    .field label {
+      display: block;
+      font-size: 9px;
+      color: var(--accent);
+      letter-spacing: 3px;
+      margin-bottom: 7px;
+    }
+
+    .field input {
+      width: 100%;
+      background: rgba(0,255,136,0.03);
+      border: 1px solid rgba(0,255,136,0.15);
+      color: #fff;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .field input:focus {
+      border-color: var(--accent);
+      background: rgba(0,255,136,0.06);
+    }
+
+    .field input::placeholder { color: rgba(255,255,255,0.2); }
+
+    .mfa-field {
+      display: none;
+      margin-bottom: 18px;
+    }
+    .mfa-field.show { display: block; }
+
+    .mfa-hint {
+      font-size: 10px;
+      color: var(--yellow);
+      margin-top: 6px;
+      letter-spacing: 1px;
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 13px;
+      background: var(--accent);
+      border: none;
+      color: #000;
+      font-family: 'Orbitron', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 8px;
+    }
+    .btn-login:hover { opacity: 0.85; }
+    .btn-login:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .login-msg {
+      font-size: 11px;
+      margin-top: 14px;
+      padding: 10px 12px;
+      letter-spacing: 1px;
+      display: none;
+    }
+    .login-msg.err { display: block; color: var(--accent2); border-left: 2px solid var(--accent2); background: rgba(255,68,68,0.08); }
+    .login-msg.ok  { display: block; color: var(--accent); border-left: 2px solid var(--accent); background: rgba(0,255,136,0.06); }
+
+    .security-note {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 9px;
+      color: var(--dim);
+      letter-spacing: 1px;
+      line-height: 1.8;
+    }
+
+    /* ── DASHBOARD ── */
+    .dashboard { display: none; }
+    .dashboard.active { display: block; }
+
+    /* Header */
+    .header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-brand .brand {
+      font-family: 'Orbitron', monospace;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #fff;
+    }
+    .header-brand .brand span { color: var(--accent); }
+
+    .header-brand .env-badge {
+      font-size: 9px;
+      padding: 3px 8px;
+      background: rgba(0,255,136,0.1);
+      border: 1px solid rgba(0,255,136,0.25);
+      color: var(--accent);
+      letter-spacing: 2px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    .user-dot {
+      width: 28px; height: 28px;
+      background: rgba(0,255,136,0.1);
+      border: 1px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .btn-out {
+      font-size: 9px;
+      padding: 6px 14px;
+      background: transparent;
+      border: 1px solid rgba(255,68,68,0.4);
+      color: var(--accent2);
+      cursor: pointer;
+      letter-spacing: 2px;
+      font-family: 'IBM Plex Mono', monospace;
+      transition: background 0.2s;
+    }
+    .btn-out:hover { background: rgba(255,68,68,0.1); }
+
+    /* Dashboard content */
+    .dash-content { padding: 32px; }
+
+    .dash-title {
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 3px;
+      margin-bottom: 24px;
+    }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: var(--accent);
+      opacity: 0.4;
+    }
+
+    .stat-label {
+      font-size: 9px;
+      color: var(--dim);
+      letter-spacing: 3px;
+      margin-bottom: 10px;
+    }
+
+    .stat-value {
+      font-family: 'Orbitron', monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .stat-value.red { color: var(--accent2); }
+    .stat-value.yellow { color: var(--yellow); }
+
+    .stat-unit {
+      font-size: 10px;
+      color: var(--dim);
+      margin-top: 4px;
+    }
+
+    /* Profile section */
+    .section {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .section-head {
+      font-size: 10px;
+      color: var(--accent);
+      letter-spacing: 3px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .info-item label {
+      display: block;
+      font-size: 9px;
+      color: var(--dim);
+      letter-spacing: 2px;
+      margin-bottom: 5px;
+    }
+
+    .info-item .val {
+      font-size: 13px;
+      color: #fff;
+    }
+
+    /* Log stream */
+    .log-stream {
+      background: #000;
+      border: 1px solid rgba(0,255,136,0.1);
+      padding: 16px;
+      height: 180px;
+      overflow-y: auto;
+      font-size: 11px;
+      line-height: 2;
+    }
+
+    .log-line { color: rgba(0,255,136,0.7); }
+    .log-line.warn { color: var(--yellow); }
+    .log-line.err { color: var(--accent2); }
+
+    /* Users table */
+    .users-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .users-table th {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--dim);
+      text-align: left;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .users-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(0,255,136,0.05);
+    }
+
+    .users-table tr:hover td { background: rgba(0,255,136,0.03); }
+
+    .role-pill {
+      font-size: 9px;
+      padding: 2px 8px;
+      letter-spacing: 1px;
+    }
+    .role-pill.admin { background: rgba(255,68,68,0.15); color: var(--accent2); border: 1px solid rgba(255,68,68,0.3); }
+    .role-pill.user  { background: rgba(0,255,136,0.08); color: var(--accent); border: 1px solid rgba(0,255,136,0.2); }
+    .role-pill.staff { background: rgba(255,215,0,0.1); color: var(--yellow); border: 1px solid rgba(255,215,0,0.3); }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: rgba(0,255,136,0.3); }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- LOGIN -->
+  <div class="login-page" id="loginPage">
+    <div class="login-box">
+      <div class="intranet-badge">
+        <div class="badge-dot"></div>
+        INTRANET — YALNIZ DAXİLİ ŞƏBƏKƏ
+      </div>
+
+      <div class="login-title">MİLLİ<span>SEC</span></div>
+      <div class="login-sub">DAXİLİ ƏMƏLIYYAT MƏRKƏZİ</div>
+
+      <div class="field">
+        <label>İSTİFADƏÇİ ADI / E-POÇT</label>
+        <input type="text" id="i_user" placeholder="id@millisec.live"/>
+      </div>
+
+      <div class="field">
+        <label>ŞİFRƏ</label>
+        <input type="password" id="i_pass" placeholder="••••••••"/>
+      </div>
+
+      <div class="mfa-field" id="mfaField">
+        <label>MFA KODU (Google Authenticator)</label>
+        <input type="text" id="i_mfa" placeholder="000000" maxlength="6"/>
+        <div class="mfa-hint">⚑ Google Authenticator tətbiqindən 6 rəqəmli kodu daxil edin</div>
+      </div>
+
+      <button class="btn-login" id="loginBtn" onclick="intranetLogin()">DAXİL OL</button>
+
+      <div class="login-msg" id="loginMsg"></div>
+
+      <div class="security-note">
+        ⚠ BU RESURS YALNIZ DAXILI ŞƏBƏKƏDƏN ERİŞİLƏ BİLƏR<br>
+        İCAZƏSİZ GİRİŞ CİNAYİ MƏSULİYYƏTƏ SƏBƏB OLA BİLƏR<br>
+        BÜTÜN SESSİYALAR QEYDƏ ALINIR VƏ İZLƏNİLİR
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="dashboard" id="dashboard">
+    <div class="header">
+      <div class="header-brand">
+        <div class="brand">MİLLİ<span>SEC</span></div>
+        <div class="env-badge">INTRANET</div>
+      </div>
+      <div class="header-right">
+        <div class="user-chip">
+          <div class="user-dot" id="hdrAvatar">?</div>
+          <span id="hdrName">—</span>
+        </div>
+        <button class="btn-out" onclick="logout()">ÇIXIŞ</button>
+      </div>
+    </div>
+
+    <div class="dash-content">
+      <div class="dash-title">// ƏMƏLIYYAT PANELİ — REALTİM</div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">AKTİV SESSİYALAR</div>
+          <div class="stat-value" id="statSessions">—</div>
+          <div class="stat-unit">online istifadəçi</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">API SORĞULARI</div>
+          <div class="stat-value yellow" id="statReqs">—</div>
+          <div class="stat-unit">son 24 saat</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">UĞURSUZ GİRİŞ</div>
+          <div class="stat-value red" id="statFails">—</div>
+          <div class="stat-unit">401 xətaları</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">SİSTEM STATUSU</div>
+          <div class="stat-value" style="font-size:14px;margin-top:6px">● AKTİV</div>
+          <div class="stat-unit">bütün servislər işləyir</div>
+        </div>
+      </div>
+
+      <!-- Profile -->
+      <div class="section">
+        <div class="section-head">// PROFİL MƏLUMATLARIniz</div>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>İSTİFADƏÇİ ADI</label>
+            <div class="val" id="dUser">—</div>
+          </div>
+          <div class="info-item">
+            <label>E-POÇT</label>
+            <div class="val" id="dEmail">—</div>
+          </div>
+          <div class="info-item">
+            <label>ROL</label>
+            <div class="val" id="dRole">—</div>
+          </div>
+          <div class="info-item">
+            <label>HESAB TARİXİ</label>
+            <div class="val" id="dCreated">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin: Users table -->
+      <div class="section" id="usersSection" style="display:none">
+        <div class="section-head">// İSTİFADƏÇİ İDARƏETMƏSİ</div>
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>İSTİFADƏÇİ</th>
+              <th>E-POÇT</th>
+              <th>ROL</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Log stream -->
+      <div class="section">
+        <div class="section-head">// CANLI LOG AXINI</div>
+        <div class="log-stream" id="logStream"></div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = '';
+let token = null;
+let mfaShown = false;
+
+async function intranetLogin() {
+  const username = document.getElementById('i_user').value.trim();
+  const password = document.getElementById('i_pass').value;
+  const mfa_code = document.getElementById('i_mfa').value.trim();
+  const btn = document.getElementById('loginBtn');
+  const msg = document.getElementById('loginMsg');
+
+  if (!username || !password) {
+    showMsg('İstifadəçi adı və şifrə daxil edin.', 'err');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'YOXLANILİR...';
+  msg.className = 'login-msg';
+
+  const body = { username, password };
+  if (mfa_code) body.mfa_code = mfa_code;
+
+  try {
+    const res = await fetch(API + '/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.token) {
+      token = data.token;
+      sessionStorage.setItem('ms_token', token);
+      sessionStorage.setItem('ms_user', JSON.stringify(data.user));
+      showDashboard(data.user);
+    } else if (data.mfa_required && !mfaShown) {
+      mfaShown = true;
+      document.getElementById('mfaField').classList.add('show');
+      showMsg('MFA kodu tələb olunur. Google Authenticator-dan kodu daxil edin.', 'ok');
+    } else {
+      showMsg(data.message || 'Giriş uğursuz.', 'err');
+    }
+  } catch(e) {
+    showMsg('Server ilə əlaqə qurulmadı.', 'err');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'DAXİL OL';
+}
+
+function showMsg(text, type) {
+  const msg = document.getElementById('loginMsg');
+  msg.textContent = (type === 'err' ? '✗ ' : '✓ ') + text;
+  msg.className = 'login-msg ' + type;
+}
+
+async function showDashboard(user) {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('dashboard').classList.add('active');
+
+  document.getElementById('hdrAvatar').textContent = user.username[0].toUpperCase();
+  document.getElementById('hdrName').textContent = user.username.toUpperCase();
+  document.getElementById('dUser').textContent = user.username;
+  document.getElementById('dEmail').textContent = user.email;
+  document.getElementById('dRole').textContent = user.role.toUpperCase();
+  document.getElementById('dCreated').textContent = new Date(user.created_at).toLocaleDateString('az-AZ');
+
+  // Fake stats
+  document.getElementById('statSessions').textContent = Math.floor(Math.random()*8+1);
+  document.getElementById('statReqs').textContent = Math.floor(Math.random()*900+100);
+  document.getElementById('statFails').textContent = Math.floor(Math.random()*15);
+
+  // Admin: load users
+  if (user.role === 'admin') {
+    document.getElementById('usersSection').style.display = 'block';
+    loadUsers();
+  }
+
+  startLogStream();
+}
+
+async function loadUsers() {
+  try {
+    const res = await fetch(API + '/api/v1/users', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    const tbody = document.getElementById('usersBody');
+    tbody.innerHTML = '';
+    (data.users || []).forEach(u => {
+      tbody.innerHTML += `
+        <tr>
+          <td style="color:rgba(200,216,208,0.4)">${u.id}</td>
+          <td>${u.username}</td>
+          <td>${u.email}</td>
+          <td><span class="role-pill ${u.role}">${u.role.toUpperCase()}</span></td>
+        </tr>`;
+    });
+  } catch(e) {}
+}
+
+function startLogStream() {
+  const stream = document.getElementById('logStream');
+  const logs = [
+    { t: 'ok', m: 'SİSTEM BAŞLADI — BÜTÜN SERVİSLƏR AKTİV' },
+    { t: 'ok', m: 'VPN TUNELI TƏSDİQLƏNDİ — WireGuard' },
+    { t: 'ok', m: 'TLS 1.3 SERTİFİKATI GEÇƏRLİDİR' },
+    { t: 'warn', m: 'SPLUNK HEC BAĞLANTISI YOXLANILIR...' },
+    { t: 'ok', m: 'JWT TOKEN DOĞRULANIB' },
+    { t: 'ok', m: 'POSTGRESQL — BAĞLANTI AKTİV' },
+  ];
+  logs.forEach((l, i) => {
+    setTimeout(() => {
+      const time = new Date().toLocaleTimeString('az-AZ');
+      stream.innerHTML += `<div class="log-line ${l.t === 'warn' ? 'warn' : ''}">[${time}] ${l.m}</div>`;
+      stream.scrollTop = stream.scrollHeight;
+    }, i * 400);
+  });
+
+  setInterval(() => {
+    const events = [
+      { t: 'ok', m: 'HEALTH CHECK — 200 OK' },
+      { t: 'ok', m: 'API SORĞUSU — /api/v1/profile — 200' },
+      { t: 'warn', m: 'GİRİŞ CƏHDİ — NAMƏLUM IP' },
+    ];
+    const e = events[Math.floor(Math.random() * events.length)];
+    const time = new Date().toLocaleTimeString('az-AZ');
+    stream.innerHTML += `<div class="log-line ${e.t === 'warn' ? 'warn' : e.t === 'err' ? 'err' : ''}">[${time}] ${e.m}</div>`;
+    stream.scrollTop = stream.scrollHeight;
+  }, 5000);
+}
+
+function logout() {
+  token = null;
+  sessionStorage.clear();
+  location.reload();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') intranetLogin();
+});
+
+// Auto-login
+const saved = sessionStorage.getItem('ms_user');
+const savedToken = sessionStorage.getItem('ms_token');
+if (saved && savedToken) {
+  token = savedToken;
+  try { showDashboard(JSON.parse(saved)); } catch(e) {}
+}
+</script>
+</body>
+</html>
