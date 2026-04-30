@@ -73,13 +73,8 @@ millisec-v2/
 │           ├── database.js     # PostgreSQL bağlantı pool-u
 │           └── splunk.js       # Splunk HEC log göndəricisi
 ├── database/
-│   └── init.sql                # Cədvəl yaratma və DB sxemi
-├── vpn/
-│   └── wg0.conf                # WireGuard VPN konfiquriyası
-├── ssl/
-│   └── certbot-init.sh         # Let's Encrypt sertifikat skripti
-└── security/
-    └── trivy-scan.sh           # Docker image təhlükəsizlik skanı
+   └── init.sql                # Cədvəl yaratma və DB sxemi
+
 ```
 
 ---
