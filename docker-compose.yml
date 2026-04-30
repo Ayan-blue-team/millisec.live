@@ -1,0 +1,111 @@
+services:
+
+  # ── REVERSE PROXY ──
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: millisec-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - nginx_logs:/var/log/nginx
+    networks:
+      - public_net
+    depends_on:
+      - frontend-external
+      - frontend-intranet
+      - backend
+    restart: unless-stopped
+
+  # ── EXTERNAL FRONTEND ──
+  frontend-external:
+    build:
+      context: ./frontend-external
+      dockerfile: Dockerfile
+    container_name: millisec-frontend-external
+    networks:
+      - public_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── INTRANET FRONTEND ──
+  frontend-intranet:
+    build:
+      context: ./frontend-intranet
+      dockerfile: Dockerfile
+    container_name: millisec-frontend-intranet
+    networks:
+      - public_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── BACKEND API ──
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: millisec-backend
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=millisec
+      - DB_USER=millisec_user
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=8h
+      - REQUIRE_MFA=${REQUIRE_MFA:-false}
+      - SPLUNK_HEC_URL=${SPLUNK_HEC_URL:-}
+      - SPLUNK_HEC_TOKEN=${SPLUNK_HEC_TOKEN:-}
+      - NODE_ENV=production
+    networks:
+      - public_net
+      - private_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── DATABASE ──
+  postgres:
+    image: postgres:16-alpine
+    container_name: millisec-postgres
+    environment:
+      - POSTGRES_DB=millisec
+      - POSTGRES_USER=millisec_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - private_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U millisec_user -d millisec"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  public_net:
+    driver: bridge
+  private_net:
+    driver: bridge
+    internal: true
+
+volumes:
+  postgres_data:
+  nginx_logs:
