@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MilliSec | Secure Entry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #000;
+      --accent: #00f0ff;
+      --accent2: #ff2d6b;
+      --gold: #e8c84a;
+      --text: #e0e0e0;
+      --panel: rgba(0,0,0,0.82);
+      --border: rgba(0,240,255,0.25);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Background image */
+    .bg-image {
+      position: fixed;
+      inset: 0;
+      background: url('bg.jpg') center center / cover no-repeat;
+      filter: brightness(0.38) saturate(1.2);
+      z-index: 0;
+    }
+
+    /* Scanline overlay */
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* Vignette */
+    .vignette {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.85) 100%);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* Top bar */
+    .topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent), var(--accent2));
+      z-index: 100;
+      animation: scanBar 3s linear infinite;
+    }
+    @keyframes scanBar {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+
+    /* Corner decorations */
+    .corner {
+      position: fixed;
+      width: 60px; height: 60px;
+      z-index: 10;
+    }
+    .corner::before, .corner::after {
+      content: '';
+      position: absolute;
+      background: var(--accent);
+    }
+    .corner::before { width: 2px; height: 100%; }
+    .corner::after { width: 100%; height: 2px; }
+    .corner.tl { top: 16px; left: 16px; }
+    .corner.tr { top: 16px; right: 16px; transform: scaleX(-1); }
+    .corner.bl { bottom: 16px; left: 16px; transform: scaleY(-1); }
+    .corner.br { bottom: 16px; right: 16px; transform: scale(-1); }
+
+    /* Main layout */
+    main {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Login panel */
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(18px);
+      padding: 48px 44px;
+      width: 100%;
+      max-width: 420px;
+      position: relative;
+      clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px));
+    }
+
+    .panel::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(0,240,255,0.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* Logo area */
+    .logo-area {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .logo-hex {
+      width: 72px; height: 72px;
+      margin: 0 auto 16px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-hex svg {
+      width: 100%;
+      height: 100%;
+      animation: rotateSlow 12s linear infinite;
+    }
+    @keyframes rotateSlow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .logo-inner {
+      position: absolute;
+      font-family: 'Orbitron', monospace;
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--accent);
+      text-shadow: 0 0 20px var(--accent);
+      letter-spacing: -1px;
+    }
+
+    .brand-name {
+      font-family: 'Orbitron', monospace;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 6px;
+      color: #fff;
+      text-shadow: 0 0 30px rgba(0,240,255,0.5);
+    }
+
+    .brand-name span {
+      color: var(--accent);
+    }
+
+    .brand-sub {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: rgba(0,240,255,0.6);
+      letter-spacing: 4px;
+      margin-top: 6px;
+    }
+
+    /* Section title */
+    .section-title {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 4px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title::before, .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Form */
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    label {
+      display: block;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      color: rgba(0,240,255,0.7);
+      letter-spacing: 3px;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      background: rgba(0,240,255,0.04);
+      border: 1px solid rgba(0,240,255,0.2);
+      color: #fff;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 14px;
+      padding: 13px 16px;
+      outline: none;
+      transition: all 0.3s;
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      background: rgba(0,240,255,0.08);
+      box-shadow: 0 0 20px rgba(0,240,255,0.1), inset 0 0 10px rgba(0,240,255,0.05);
+    }
+
+    input::placeholder { color: rgba(255,255,255,0.25); }
+
+    /* Submit button */
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      margin-top: 28px;
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: 'Orbitron', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s;
+      clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+    }
+
+    .btn-submit::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--accent);
+      transform: translateX(-100%);
+      transition: transform 0.3s;
+    }
+
+    .btn-submit:hover::before { transform: translateX(0); }
+    .btn-submit:hover { color: #000; }
+
+    .btn-submit span { position: relative; z-index: 1; }
+
+    /* Status messages */
+    .msg {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      padding: 10px 14px;
+      margin-top: 16px;
+      display: none;
+      letter-spacing: 1px;
+    }
+    .msg.error {
+      display: block;
+      color: var(--accent2);
+      border-left: 2px solid var(--accent2);
+      background: rgba(255,45,107,0.08);
+    }
+    .msg.success {
+      display: block;
+      color: var(--accent);
+      border-left: 2px solid var(--accent);
+      background: rgba(0,240,255,0.08);
+    }
+
+    /* Profile panel */
+    .profile-panel {
+      display: none;
+    }
+
+    .profile-panel.active {
+      display: block;
+    }
+
+    .login-form.hidden { display: none; }
+
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .avatar {
+      width: 48px; height: 48px;
+      background: rgba(0,240,255,0.1);
+      border: 1px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Orbitron', monospace;
+      font-size: 18px;
+      color: var(--accent);
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    }
+
+    .profile-info h3 {
+      font-family: 'Orbitron', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 2px;
+    }
+
+    .profile-info p {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: rgba(0,240,255,0.6);
+      margin-top: 3px;
+    }
+
+    .role-badge {
+      display: inline-block;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 9px;
+      padding: 3px 8px;
+      letter-spacing: 2px;
+      margin-top: 4px;
+    }
+    .role-badge.admin { background: rgba(255,45,107,0.15); color: var(--accent2); border: 1px solid rgba(255,45,107,0.3); }
+    .role-badge.user { background: rgba(0,240,255,0.1); color: var(--accent); border: 1px solid var(--border); }
+
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(0,240,255,0.08);
+      font-size: 13px;
+    }
+    .data-row .key {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      color: rgba(0,240,255,0.5);
+      letter-spacing: 2px;
+    }
+    .data-row .val { color: #fff; }
+
+    .btn-logout {
+      width: 100%;
+      padding: 11px;
+      margin-top: 24px;
+      background: transparent;
+      border: 1px solid rgba(255,45,107,0.4);
+      color: var(--accent2);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 3px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-logout:hover { background: rgba(255,45,107,0.1); }
+
+    /* Status indicator */
+    .status-bar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      color: rgba(0,240,255,0.4);
+      letter-spacing: 3px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-dot {
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    /* Loading */
+    .btn-submit.loading span::after {
+      content: '...';
+      animation: dots 1s steps(3) infinite;
+    }
+    @keyframes dots {
+      0% { content: '.'; }
+      33% { content: '..'; }
+      66% { content: '...'; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-image"></div>
+<div class="scanlines"></div>
+<div class="vignette"></div>
+<div class="topbar"></div>
+
+<div class="corner tl"></div>
+<div class="corner tr"></div>
+<div class="corner bl"></div>
+<div class="corner br"></div>
+
+<main>
+  <div class="panel">
+
+    <div class="logo-area">
+      <div class="logo-hex">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="50,2 95,26 95,74 50,98 5,74 5,26"
+            stroke="#00f0ff" stroke-width="1.5" fill="none" opacity="0.6"/>
+          <polygon points="50,10 87,31 87,69 50,90 13,69 13,31"
+            stroke="#00f0ff" stroke-width="0.5" fill="none" opacity="0.3"/>
+        </svg>
+        <span class="logo-inner">MS</span>
+      </div>
+      <div class="brand-name">MILLI<span>SEC</span></div>
+      <div class="brand-sub">CYBER SECURITY OPERATIONS</div>
+    </div>
+
+    <!-- Login Form -->
+    <div class="login-form" id="loginForm">
+      <div class="section-title">GİRİŞ PORTALI</div>
+
+      <div class="form-group">
+        <label>İSTİFADƏÇİ ADI / E-POÇT</label>
+        <input type="text" id="username" placeholder="id@millisec.live" autocomplete="off"/>
+      </div>
+
+      <div class="form-group">
+        <label>ŞİFRƏ</label>
+        <input type="password" id="password" placeholder="••••••••••"/>
+      </div>
+
+      <button class="btn-submit" id="loginBtn" onclick="doLogin()">
+        <span>AVTORİZASİYA</span>
+      </button>
+
+      <div class="msg" id="msg"></div>
+    </div>
+
+    <!-- Profile Panel -->
+    <div class="profile-panel" id="profilePanel">
+      <div class="section-title">TƏHLÜKƏSİZ BAĞLANTI</div>
+
+      <div class="profile-header">
+        <div class="avatar" id="avatarLetter">?</div>
+        <div class="profile-info">
+          <h3 id="profileUsername">—</h3>
+          <p id="profileEmail">—</p>
+          <span class="role-badge" id="roleBadge">—</span>
+        </div>
+      </div>
+
+      <div class="data-row">
+        <span class="key">STATUS</span>
+        <span class="val" style="color:#00f0ff">● AKTİV</span>
+      </div>
+      <div class="data-row">
+        <span class="key">ROL</span>
+        <span class="val" id="profileRole">—</span>
+      </div>
+      <div class="data-row">
+        <span class="key">HESAB TARİXİ</span>
+        <span class="val" id="profileCreated">—</span>
+      </div>
+      <div class="data-row">
+        <span class="key">PROTOKOL</span>
+        <span class="val">JWT / RS256</span>
+      </div>
+
+      <button class="btn-logout" onclick="doLogout()">◀ ÇIXIŞ</button>
+    </div>
+
+  </div>
+</main>
+
+<div class="status-bar">
+  <div class="status-dot"></div>
+  <span>SİSTEM AKTİV — TLS 1.3 — AES-256-GCM</span>
+</div>
+
+<script>
+  const API = '';
+
+  async function doLogin() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const btn = document.getElementById('loginBtn');
+    const msg = document.getElementById('msg');
+
+    if (!username || !password) {
+      showMsg('İstifadəçi adı və şifrə daxil edin.', 'error');
+      return;
+    }
+
+    btn.classList.add('loading');
+    btn.disabled = true;
+    msg.className = 'msg';
+    msg.style.display = 'none';
+
+    try {
+      const res = await fetch(API + '/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.token) {
+        localStorage.setItem('ms_token', data.token);
+        localStorage.setItem('ms_user', JSON.stringify(data.user));
+        showProfile(data.user);
+      } else if (data.mfa_required) {
+        showMsg('MFA kodu tələb olunur. İntranet portalından istifadə edin.', 'error');
+      } else {
+        showMsg(data.message || 'Giriş uğursuz oldu.', 'error');
+      }
+    } catch (e) {
+      showMsg('Server ilə əlaqə qurulmadı.', 'error');
+    }
+
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+
+  function showProfile(user) {
+    document.getElementById('loginForm').classList.add('hidden');
+    document.getElementById('profilePanel').classList.add('active');
+
+    document.getElementById('avatarLetter').textContent = user.username[0].toUpperCase();
+    document.getElementById('profileUsername').textContent = user.username.toUpperCase();
+    document.getElementById('profileEmail').textContent = user.email;
+    document.getElementById('profileRole').textContent = user.role.toUpperCase();
+
+    const badge = document.getElementById('roleBadge');
+    badge.textContent = user.role.toUpperCase();
+    badge.className = 'role-badge ' + (user.role === 'admin' ? 'admin' : 'user');
+
+    const d = new Date(user.created_at);
+    document.getElementById('profileCreated').textContent = d.toLocaleDateString('az-AZ');
+  }
+
+  function doLogout() {
+    localStorage.removeItem('ms_token');
+    localStorage.removeItem('ms_user');
+    document.getElementById('loginForm').classList.remove('hidden');
+    document.getElementById('profilePanel').classList.remove('active');
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+  }
+
+  function showMsg(text, type) {
+    const msg = document.getElementById('msg');
+    msg.textContent = '⚠ ' + text;
+    msg.className = 'msg ' + type;
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+
+  // Auto-login if token exists
+  const saved = localStorage.getItem('ms_user');
+  if (saved) {
+    try { showProfile(JSON.parse(saved)); } catch(e) {}
+  }
+</script>
+</body>
+</html>
