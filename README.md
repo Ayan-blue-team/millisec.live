@@ -73,7 +73,7 @@ millisec-v2/
 │           ├── database.js     # PostgreSQL bağlantı pool-u
 │           └── splunk.js       # Splunk HEC log göndəricisi
 ├── database/
-│   └── init.sql                # Cədvəl yaratma + standart istifadəçilər
+│   └── init.sql                # Cədvəl yaratma və DB sxemi
 ├── vpn/
 │   └── wg0.conf                # WireGuard VPN konfiquriyası
 ├── ssl/
@@ -245,14 +245,7 @@ index=main event=http_request | timechart count span=1m
 
 **`login_logs` cədvəli** — Giriş tarixçəsi (gələcək audit üçün).
 
-Standart istifadəçilər:
-| İstifadəçi | Rol | Şifrə |
-|---|---|---|
-| `admin` | admin | `Admin123!` |
-| `john` | user | `Admin123!` |
-| `sarah` | staff | `Admin123!` |
 
-> ⚠️ Deploy etməzdən əvvəl bu şifrələri mütləq dəyişdirin!
 
 ---
 
